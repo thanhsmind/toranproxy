@@ -1,20 +1,23 @@
 FROM nguyenphuongthanhf/ubuntu1604:latest
 
-
+ENV FIRST_USER apache2
 # Add default apache2 user
-RUN useradd -u 1000 -m --shell /bin/bash apache2 && \
-    echo "apache2:P@ssw0rd123456" | chpasswd
+RUN useradd -u 1000 -m --shell /bin/bash $FIRST_USER && \
+    echo "${FIRST_USER}:P@ssw0rd123456" | chpasswd
 
 ENV VOLUME_DATA /data
-ENV VOLUME_CONFIG /data/toran/config
-ENV VOLUME_LOG /data/toran/log
+ENV VOLUME_CONFIG $VOLUME_DATA/config
+ENV VOLUME_LOG $VOLUME_DATA/log
+ENV APP_TORAN_HOST toranproxy.anphabe.net
+ENV APP_TORAN_SOURCE_FILENAME toran-proxy-v1.5.3.tgz
 ENV APP_TORAN_SOURCE https://toranproxy.com/releases/toran-proxy-v1.5.3.tgz
 
-ENV  APACHE2_CONFIG_FOLDER  /data/apache2/config
-ENV  APACHE2_DATA_FOLDER    /data/apache2/www
-ENV  APACHE2_LOG_FOLDER     /data/apache2/log
-ENV  PHP5_CONFIG_FOLDER   /data/php/config
-ENV  PHP5_LOG_FOLDER      /data/php/log
+ENV  APACHE2_CONFIG_FOLDER  $VOLUME_DATA/apache2/config
+ENV  APACHE2_DATA_FOLDER    $VOLUME_DATA/apache2/www
+ENV  APACHE2_LOG_FOLDER     $VOLUME_DATA/apache2/log
+ENV  PHP5_CONFIG_FOLDER   $VOLUME_DATA/php/config
+ENV  PHP5_LOG_FOLDER      $VOLUME_DATA/php/log
+
 RUN DEBIAN_FRONTEND=noninteractive \
 && apt-get install -y python-software-properties \
 && add-apt-repository -y ppa:ondrej/php \
@@ -22,8 +25,9 @@ RUN DEBIAN_FRONTEND=noninteractive \
 && apt-get install -y git apache2 libapache2-mod-xsendfile \
 && a2enmod rewrite \
 && a2enmod vhost_alias \
-&& adduser www-data apache2 \
+&& adduser www-data $FIRST_USER \
 && echo "ServerName localhost" >> /etc/apache2/apache2.conf \
+&& sed -e "s/www-data/${FIRST_USER}/g" -i /etc/apache2/envvars \
 && mv /etc/apache2 /etc/apache2_origin \
 && mkdir -p $APACHE2_CONFIG_FOLDER \
 && rm $APACHE2_CONFIG_FOLDER -rf \
@@ -34,12 +38,12 @@ RUN DEBIAN_FRONTEND=noninteractive \
 && rm $APACHE2_DATA_FOLDER -rf \
 && ln -s /var/www_origin $APACHE2_DATA_FOLDER \
 && ln -s $APACHE2_DATA_FOLDER /var/www \
-&& chown apache2:apache2 -h /var/www \
+&& chown $FIRST_USER:$FIRST_USER -h /var/www \
 && rm /var/log/apache2 -R \
 && mkdir -p $APACHE2_LOG_FOLDER \
 && rm $APACHE2_LOG_FOLDER -rf \
 && ln -s $APACHE2_LOG_FOLDER /var/log/apache2 \
-&& apt-get install -y libapache2-mod-php5.6 php5.6 php5.6-common php5.6-cli php5.6-dev php-pear php5.6-json php5.6-imagick php5.6-imap php5.6-intl php5.6-mcrypt php5.6-memcached php5.6-redis php5.6-mongo php5.6-xdebug php5.6-curl php5.6-mysqlnd php5.6-xcache php5.6-mcrypt php5.6-oauth php5.6-gd \
+&& apt-get install -y libapache2-mod-php5.6 php5.6 php5.6-common php5.6-dom php5.6-cli php5.6-dev php-pear php5.6-json php5.6-imagick php5.6-imap php5.6-intl php5.6-mcrypt php5.6-memcached php5.6-redis php5.6-mongo php5.6-xdebug php5.6-curl php5.6-mysqlnd php5.6-xcache php5.6-mcrypt php5.6-oauth php5.6-gd \
 && mv /etc/php /etc/php_origin \
 && mkdir -p $PHP5_CONFIG_FOLDER \
 && rm $PHP5_CONFIG_FOLDER  -rf \
@@ -79,11 +83,33 @@ RUN DEBIAN_FRONTEND=noninteractive \
 && export TMP=`echo "error_log\=${PHP5_LOG_FOLDER}/error.log" | sed -e "s/\//\\\\\\\\\//g"`  \
 && sed -e "s/^\;error_log = php_errors\.log$/$TMP/g" -i /etc/php_origin/5.6/cli/php.ini \
 && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-COPY run.sh /run.sh
-EXPOSE 443
 
 
 RUN apt-get install -y git
+
+
+# Install Supervisor
+ENV  SUPERVISOR_CONFIG_FOLDER   $VOLUME_DATA/supervisor/config
+ENV  SUPERVISOR_LOG_FOLDER      $VOLUME_DATA/supervisor/log
+
+
+
+RUN DEBIAN_FRONTEND=noninteractive && \
+apt-get -y update && \
+apt-get -y install supervisor && \
+apt-get -y clean
+# Create the Configuration Folder Structure
+RUN mv /etc/supervisor /etc/supervisor_origin && \
+mkdir -p $SUPERVISOR_CONFIG_FOLDER && \
+rm $SUPERVISOR_CONFIG_FOLDER -rf && \
+ln -s /etc/supervisor_origin $SUPERVISOR_CONFIG_FOLDER && \
+ln -s $SUPERVISOR_CONFIG_FOLDER /etc/supervisor && \
+# Create the Log Folder Structure
+rm /var/log/supervisor -rf && \
+mkdir -p $SUPERVISOR_LOG_FOLDER && \
+rm $SUPERVISOR_LOG_FOLDER -rf && \
+ln -s $SUPERVISOR_LOG_FOLDER /var/log/supervisor
+
 # start CRON using supervisord
 ADD z1_init_cron.sh /opt/docker-before-run/
 RUN mv /etc/crontab /etc/crontab_origin && \
@@ -92,13 +118,26 @@ RUN mv /etc/crontab /etc/crontab_origin && \
     ln -s $VOLUME_CONFIG/cron/crontab /etc/crontab && \
     chmod +x /opt/docker-before-run/z1_init_cron.sh && \
     echo "\
-[program:cron] \n \
-command=/usr/sbin/cron -f \n \
-autostart=true \n \
+[program:cron] \n\
+command=/usr/sbin/cron -f \n\
+autostart=true \n\
 autorestart=true \
-" >> /etc/supervisor/conf.d/cron.conf
-ADD parameters.yml /opt/
-ADD config.yml /opt/
-ADD z2_init_toranproxy.sh /opt/docker-before-run/
+" >> /etc/supervisor/conf.d/cron.conf && \
+echo "\
+[program:apache2]  \n\
+command=/bin/bash -c \"source /etc/apache2/envvars && exec /usr/sbin/apache2 -DFOREGROUND\"  \n\
+autostart=true  \n\
+autorestart=true  \
+" >> /etc/supervisor/conf.d/apache2.conf
+
+COPY parameters.yml /opt/
+COPY config.yml /opt/
+COPY z2_init_toranproxy.sh /opt/docker-before-run
+
+RUN sed -e "s/^\s+toran_host:.*$/toran_host: ${APP_TORAN_HOST}/g" -i /opt/parameters.yml
+
+EXPOSE 443
 EXPOSE 80
+COPY run.sh /run.sh
 CMD ["/run.sh"]
+

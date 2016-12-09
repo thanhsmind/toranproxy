@@ -1,26 +1,27 @@
 #!/bin/bash
-VHOST_FILE=/etc/apache2/sites-available/toranproxy.anphabe.net.conf
+VHOST_FILE=/etc/apache2/sites-available/${APP_TORAN_HOST}.conf
 APP_FOLDER="$VOLUME_DATA/toran"
-TORANPROXY_WEB=/data/toran/web
+TORANPROXY_WEB=/$VOLUME_DATA/toran/web
 
 if [[ ! -d $APP_FOLDER ]]; then
     echo "=> ToranProxy at [$APP_FOLDER] not found. Installing toran proxy..."
     wget $APP_TORAN_SOURCE
-    tar -zxvf toran-proxy-v1.1.2.tgz
-    mv toran /data/
-    rm toran-proxy-v1.1.2.tgz
-    mkdir /data/toran/app/toran/ -p
-    cp /opt/parameters.yml /data/toran/app/config/
-    cp /opt/config.yml /data/toran/app/toran/
-    chown www-data:www-data /data/toran -R
-    chmod 775 /data/toran -R
+    tar -zxvf $APP_TORAN_SOURCE_FILENAME
+    mv toran $VOLUME_DATA/
+    rm $APP_TORAN_SOURCE_FILENAME
+    mkdir $VOLUME_DATA/toran/app/toran/ -p
+    mkdir $VOLUME_DATA/toran/web/repo/packagist -p
+    cp /opt/parameters.yml $VOLUME_DATA/toran/app/config/
+    cp /opt/config.yml $VOLUME_DATA/toran/app/toran/
+    chown apache2:apache2 $VOLUME_DATA/toran -R
+    chmod 775 $VOLUME_DATA/toran -R
 else
     echo "=> Using existed ToranProxy Application at [$CONFIG_FOLDER] ..."
 fi
 
-sudo cat > $VHOST_FILE <<FILECONTENT
+cat > $VHOST_FILE <<FILECONTENT
 <VirtualHost *:80>
-        ServerName toranproxy.anphabe.net
+        ServerName ${APP_TORAN_HOST}
         DocumentRoot $TORANPROXY_WEB
                 <Directory $TORANPROXY_WEB>
                 Options Indexes FollowSymLinks MultiViews
@@ -30,11 +31,11 @@ sudo cat > $VHOST_FILE <<FILECONTENT
 </VirtualHost>
 FILECONTENT
 
-chown www-data:www-data $TORANPROXY_WEB -R
-a2ensite toranproxy.anphabe.net
+chown apache2:apache2 $TORANPROXY_WEB -R
+a2ensite ${APP_TORAN_HOST}
 supervisorctl restart apache2
-sudo -u www-data php /data/toran/bin/cron -v
-EXISTED=$(grep "/data/toran" /etc/crontab)
+sudo -u apache2 php -d allow_url_fopen=1 $VOLUME_DATA/toran/bin/cron -v
+EXISTED=$(grep "$VOLUME_DATA/toran" /etc/crontab)
 if [[ $EXISTED == "" ]]; then
-        echo "*  *    * * *   www-data cd /data/toran && php bin/cron" >> /etc/crontab
+        echo "*  *    * * *   apache2 cd $VOLUME_DATA/toran && php bin/cron" >> /etc/crontab
 fi
