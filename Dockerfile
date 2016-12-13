@@ -25,6 +25,8 @@ RUN DEBIAN_FRONTEND=noninteractive \
 && apt-get install -y git apache2 libapache2-mod-xsendfile \
 && a2enmod rewrite \
 && a2enmod vhost_alias \
+&& a2enmod proxy \
+&& a2enmod proxy_http \
 && adduser www-data $FIRST_USER \
 && echo "ServerName localhost" >> /etc/apache2/apache2.conf \
 && sed -e "s/www-data/${FIRST_USER}/g" -i /etc/apache2/envvars \
@@ -63,7 +65,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
 && sed -e "s/^allow_url_include .*$/allow_url_include = Off/g" -i /etc/php_origin/5.6/apache2/php.ini \
 && sed -e "s/^\;date\.timezone .*$/date\.timezone = \"Asia\/Ho_Chi_Minh\"/g" -i /etc/php_origin/5.6/apache2/php.ini \
 && sed -e "s/^safe_mode .*$/safe_mode = Off/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^disable_functions .*$/disable_functions = proc_open, popen, disk_free_space, diskfreespace, leak, system, shell_exec, escapeshellcmd, proc_nice, dl, symlink, show_source/g" -i /etc/php_origin/5.6/apache2/php.ini \
+&& sed -e "s/^disable_functions .*$/disable_functions = disk_free_space, diskfreespace, leak, system, shell_exec, escapeshellcmd, proc_nice, dl, symlink, show_source/g" -i /etc/php_origin/5.6/apache2/php.ini \
 && sed -e "s/^max_execution_time .*$/max_execution_time = 60/g" -i /etc/php_origin/5.6/apache2/php.ini \
 && export TMP=`echo "error_log\=${PHP5_LOG_FOLDER}/error.log" | sed -e "s/\//\\\\\\\\\//g"` \
 && sed -e "s/^\;error_log = php_errors\.log$/$TMP/g" -i /etc/php_origin/5.6/apache2/php.ini \

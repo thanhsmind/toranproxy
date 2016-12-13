@@ -31,11 +31,26 @@ cat > $VHOST_FILE <<FILECONTENT
 </VirtualHost>
 FILECONTENT
 
+VHOST_GOGS_FILE=/etc/apache2/sites-available/${APP_GOGS_HOST}.conf
+cat > $VHOST_GOGS_FILE <<FILECONTENT
+<VirtualHost *:80>
+    ProxyPreserveHost On
+    ProxyPass        "/" "http://${APP_GOGS_HOST}:${APP_GOGS_PORT}/"
+    ProxyPassReverse "/" "http://${APP_GOGS_HOST}:${APP_GOGS_PORT}/"
+    ServerName ${APP_GOGS_HOST}
+</VirtualHost>
+FILECONTENT
+
 chown apache2:apache2 $TORANPROXY_WEB -R
 a2ensite ${APP_TORAN_HOST}
+a2ensite ${APP_GOGS_HOST}
 supervisorctl restart apache2
 sudo -u apache2 php -d allow_url_fopen=1 $VOLUME_DATA/toran/bin/cron -v
 EXISTED=$(grep "$VOLUME_DATA/toran" /etc/crontab)
 if [[ $EXISTED == "" ]]; then
         echo "*  *    * * *   apache2 cd $VOLUME_DATA/toran && php bin/cron" >> /etc/crontab
+fi
+EXISTED=$(grep "$VOLUME_DATA/toran" /etc/crontab)
+if [ ! -d "/home/apache2/.ssh" ]; then
+ sudo -u apache2 ssh-keygen -f . -y -t rsa -b 2048
 fi
