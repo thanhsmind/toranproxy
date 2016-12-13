@@ -55,21 +55,9 @@ RUN DEBIAN_FRONTEND=noninteractive \
 && rm $PHP5_LOG_FOLDER -rf \
 && ln -s $PHP5_LOG_FOLDER /var/log/php \
 && sed -e "s/^short_open_tag .*$/short_open_tag = Off/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^asp_tags .*$/asp_tags = Off/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^expose_php .*$/expose_php = Off/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^display_errors .*$/display_errors = Off/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^display_startup_errors .*$/display_startup_errors = Off/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^log_errors .*$/log_errors = On/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^memory_limit .*$/memory_limit = 150M/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^allow_url_fopen .*$/allow_url_fopen = Off/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^allow_url_include .*$/allow_url_include = Off/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^\;date\.timezone .*$/date\.timezone = \"Asia\/Ho_Chi_Minh\"/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^safe_mode .*$/safe_mode = Off/g" -i /etc/php_origin/5.6/apache2/php.ini \
 && sed -e "s/^disable_functions .*$/disable_functions = disk_free_space, diskfreespace, leak, system, shell_exec, escapeshellcmd, proc_nice, dl, symlink, show_source/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^max_execution_time .*$/max_execution_time = 60/g" -i /etc/php_origin/5.6/apache2/php.ini \
 && export TMP=`echo "error_log\=${PHP5_LOG_FOLDER}/error.log" | sed -e "s/\//\\\\\\\\\//g"` \
 && sed -e "s/^\;error_log = php_errors\.log$/$TMP/g" -i /etc/php_origin/5.6/apache2/php.ini \
-&& sed -e "s/^short_open_tag .*$/short_open_tag = Off/g" -i /etc/php_origin/5.6/cli/php.ini \
 && sed -e "s/^asp_tags .*$/asp_tags = Off/g" -i /etc/php_origin/5.6/cli/php.ini \
 && sed -e "s/^expose_php .*$/expose_php = Off/g" -i /etc/php_origin/5.6/cli/php.ini \
 && sed -e "s/^display_errors .*$/display_errors = Off/g" -i /etc/php_origin/5.6/cli/php.ini \
@@ -80,10 +68,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
 && sed -e "s/^allow_url_include .*$/allow_url_include = Off/g" -i /etc/php_origin/5.6/cli/php.ini \
 && sed -e "s/^\;date\.timezone .*$/date\.timezone = \"Asia\/Ho_Chi_Minh\"/g" -i /etc/php_origin/5.6/cli/php.ini \
 && sed -e "s/^safe_mode .*$/safe_mode = Off/g" -i /etc/php_origin/5.6/cli/php.ini \
-&& sed -e "s/^disable_functions .*$/disable_functions = proc_open, popen, disk_free_space, diskfreespace, leak, system, shell_exec, escapeshellcmd, proc_nice, dl, symlink, show_source/g" -i /etc/php_origin/5.6/cli/php.ini \
 && sed -e "s/^max_execution_time .*$/max_execution_time = 60/g" -i /etc/php_origin/5.6/cli/php.ini \
-&& export TMP=`echo "error_log\=${PHP5_LOG_FOLDER}/error.log" | sed -e "s/\//\\\\\\\\\//g"`  \
-&& sed -e "s/^\;error_log = php_errors\.log$/$TMP/g" -i /etc/php_origin/5.6/cli/php.ini \
 && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 
