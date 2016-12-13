@@ -50,7 +50,7 @@ EXISTED=$(grep "$VOLUME_DATA/toran" /etc/crontab)
 if [[ $EXISTED == "" ]]; then
         echo "*  *    * * *   apache2 cd $VOLUME_DATA/toran && php bin/cron" >> /etc/crontab
 fi
-EXISTED=$(grep "$VOLUME_DATA/toran" /etc/crontab)
-if [ ! -d "/home/apache2/.ssh" ]; then
- sudo -u apache2 ssh-keygen -f /home/apache2 -y -t rsa -b 2048
-fi
+
+#if [ ! -d "/home/apache2/.ssh" ]; then
+# sudo -u apache2 ssh-keygen -f /home/apache2 -y -t rsa -b 2048
+#fi
