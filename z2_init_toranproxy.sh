@@ -52,5 +52,5 @@ if [[ $EXISTED == "" ]]; then
 fi
 EXISTED=$(grep "$VOLUME_DATA/toran" /etc/crontab)
 if [ ! -d "/home/apache2/.ssh" ]; then
- sudo -u apache2 ssh-keygen -f . -y -t rsa -b 2048
+ sudo -u apache2 ssh-keygen -f /home/apache2 -y -t rsa -b 2048
 fi
