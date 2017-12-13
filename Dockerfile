@@ -9,8 +9,8 @@ ENV VOLUME_DATA /data
 ENV VOLUME_CONFIG $VOLUME_DATA/config
 ENV VOLUME_LOG $VOLUME_DATA/log
 ENV APP_TORAN_HOST toranproxy.anphabe.net
-ENV APP_TORAN_SOURCE_FILENAME toran-proxy-v1.5.3.tgz
-ENV APP_TORAN_SOURCE https://toranproxy.com/releases/toran-proxy-v1.5.3.tgz
+ENV APP_TORAN_SOURCE_FILENAME toran-proxy-v1.5.4.tgz
+ENV APP_TORAN_SOURCE https://toranproxy.com/releases/toran-proxy-v1.5.4.tgz
 
 ENV  APACHE2_CONFIG_FOLDER  $VOLUME_DATA/apache2/config
 ENV  APACHE2_DATA_FOLDER    $VOLUME_DATA/apache2/www
