@@ -8,9 +8,7 @@ RUN useradd -u 1000 -m --shell /bin/bash $FIRST_USER && \
 ENV VOLUME_DATA /data
 ENV VOLUME_CONFIG $VOLUME_DATA/config
 ENV VOLUME_LOG $VOLUME_DATA/log
-ENV APP_TORAN_HOST toranproxy.anphabe.net
-ENV APP_TORAN_SOURCE_FILENAME toran-proxy-v1.5.4.tgz
-ENV APP_TORAN_SOURCE https://toranproxy.com/releases/toran-proxy-v1.5.4.tgz
+ENV APP_TORAN_HOST toranproxy.net
 
 ENV  APACHE2_CONFIG_FOLDER  $VOLUME_DATA/apache2/config
 ENV  APACHE2_DATA_FOLDER    $VOLUME_DATA/apache2/www
@@ -52,8 +50,8 @@ RUN DEBIAN_FRONTEND=noninteractive \
 && ln -s /etc/php_origin $PHP5_CONFIG_FOLDER  \
 && ln -s $PHP5_CONFIG_FOLDER  /etc/php \
 && mkdir -p $PHP5_LOG_FOLDER \
-&& rm $PHP5_LOG_FOLDER -rf \
-&& ln -s $PHP5_LOG_FOLDER /var/log/php \
+&& rm $PHP5_LOG_FOLDER -rf 
+RUN ln -s $PHP5_LOG_FOLDER /var/log/php \
 && sed -e "s/^short_open_tag .*$/short_open_tag = Off/g" -i /etc/php_origin/5.6/apache2/php.ini \
 && sed -e "s/^disable_functions .*$/disable_functions = disk_free_space, diskfreespace, leak, system, shell_exec, escapeshellcmd, proc_nice, dl, symlink, show_source/g" -i /etc/php_origin/5.6/apache2/php.ini \
 && export TMP=`echo "error_log\=${PHP5_LOG_FOLDER}/error.log" | sed -e "s/\//\\\\\\\\\//g"` \
@@ -80,7 +78,6 @@ ENV  SUPERVISOR_CONFIG_FOLDER   $VOLUME_DATA/supervisor/config
 ENV  SUPERVISOR_LOG_FOLDER      $VOLUME_DATA/supervisor/log
 
 
-
 RUN DEBIAN_FRONTEND=noninteractive && \
 apt-get -y update && \
 apt-get -y install supervisor && \
@@ -98,7 +95,7 @@ rm $SUPERVISOR_LOG_FOLDER -rf && \
 ln -s $SUPERVISOR_LOG_FOLDER /var/log/supervisor
 
 # start CRON using supervisord
-ADD z1_init_cron.sh /opt/docker-before-run/
+ADD config/z1_init_cron.sh /opt/docker-before-run/
 RUN mv /etc/crontab /etc/crontab_origin && \
     mkdir -p $VOLUME_CONFIG/cron && \
     ln -s /etc/crontab_origin $VOLUME_CONFIG/cron/crontab && \
@@ -117,14 +114,14 @@ autostart=true  \n\
 autorestart=true  \
 " >> /etc/supervisor/conf.d/apache2.conf
 
-COPY parameters.yml /opt/
-COPY config.yml /opt/
-COPY z2_init_toranproxy.sh /opt/docker-before-run
+COPY config/symfony2/parameters.yml /opt/
+COPY config/symfony2/config.yml /opt/
+COPY config/z2_init_toranproxy.sh /opt/docker-before-run
 
 RUN sed -e "s/^\s+toran_host:.*$/toran_host: ${APP_TORAN_HOST}/g" -i /opt/parameters.yml
 
 EXPOSE 443
 EXPOSE 80
-COPY run.sh /run.sh
+COPY config/run.sh /run.sh
 CMD ["/run.sh"]
 

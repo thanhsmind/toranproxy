@@ -4,9 +4,12 @@ version: "3.5"
 services:
     toran:
         build: .
-        #image: 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/nginx:v1.1.1
+        image: thanhsmind/toranproxy:latest
         volumes:
-            - .:/app
+            - .:/data
+        ports:
+            - "80:80"
+            - "443:443"
         environment:
-            VIRTUAL_HOST: "*.anphabe.mio"
-            CERT_NAME: "*.anphabe.mio"
+            APP_TORAN_HOST: "toranproxy.thanhsmind"
+            
