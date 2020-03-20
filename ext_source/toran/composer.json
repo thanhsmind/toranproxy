@@ -7,6 +7,7 @@
     },
     "require": {
         "php": "^5.3.3 || ^7.0",
+        "aws/aws-sdk-php": "^3.1",
         "symfony/symfony": "^2.5",
         "twig/extensions": "^1.0",
         "symfony/monolog-bundle": "^2.3",
