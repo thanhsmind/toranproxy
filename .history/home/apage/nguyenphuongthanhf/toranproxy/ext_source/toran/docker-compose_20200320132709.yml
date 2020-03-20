@@ -1,0 +1,108 @@
+# For new install:
+#  sudo systemctl stop systemd-resolved
+#  sudo systemctl disable systemd-resolved
+#
+# docker network create --driver=bridge --subnet=172.21.0.0/16 --gateway=172.21.0.1 https-proxy
+# docker run -d --restart=always --name=https-proxy --network=https-proxy -v /var/run/docker.sock:/tmp/docker.sock:ro -p 80:80 -p 443:443 -e VIRTUAL_PROTO=https 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/https_proxy:lastest
+# docker run -d --restart=always --name=dnsmasq --network=https-proxy --cap-add=NET_ADMIN -p 127.0.0.53:53:53/tcp -p 127.0.0.53:53:53/udp -p 127.0.0.1:53:53/tcp -p 127.0.0.1:53:53/udp -p 192.168.68.171:53:53/tcp -p 192.168.68.171:53:53/udp andyshinn/dnsmasq:2.78 --address=/mio/192.168.68.178 --server=192.168.68.207 --server=192.168.68.206
+
+
+# Notes: create docker volumes for elasticsearch
+# docker volume create --name elasticsearch_data
+
+version: "3.5"
+
+networks:
+  default:
+    driver: bridge
+  proxy:
+    external: true
+    name: https-proxy
+
+volumes:
+  elasticsearch_data:
+    external: true
+
+services:
+
+    php:
+        #build: http://git.anphabe.net/devops/docker-phpfpm.git
+        image: 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/phpfpm:v7.2.6.1
+        volumes:
+            - ${PROJECT_FOLDER}:/app
+    nginx:
+        #build: http://git.anphabe.net/devops/docker-nginx.git
+        image: 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/nginx:v1.1.1
+        depends_on:
+            - php
+        volumes:
+            - ./nginx-vhost-anphabe.conf:/etc/nginx/conf.d/anphabe.mio.conf
+            - ${PROJECT_FOLDER}:/app
+        environment:
+            VIRTUAL_HOST: "*.anphabe.mio"
+            CERT_NAME: "*.anphabe.mio"
+        networks:
+            proxy: {}
+            default: {}
+
+    shortflake:
+        #build: http://git.anphabe.net/mio/shortflake.git
+        image: 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/shortflake:v1.1.1
+        depends_on:
+            - php
+
+    mail:
+        image: mailhog/mailhog:v1.0.0
+        ports:
+            - 1025:1025
+            - 8025:8025
+        depends_on:
+            - php
+        networks:
+            proxy: {}
+            default: {}
+
+    memcached:
+        image: memcached:1.5.8-alpine
+        depends_on:
+          - php
+
+    redis:
+        image: redis:4.0.9-alpine
+        depends_on:
+          - php
+
+    beanstalkd:
+        image: schickling/beanstalkd
+        depends_on:
+          - php
+
+    beanstalkd-aurora:
+        image: 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/beanstalkd-aurora:1.1
+        ports:
+          - 8080:8080
+
+#    mysql:
+#        image: percona
+#        container_name: dev_mysql
+#        environment:
+#          MYSQL_ROOT_PASSWORD: "root"
+#        volumes:
+#          - /data/mysql_data:/data
+#        ports:
+#          - "3306:3306"
+
+
+# mysql:
+#   image: percona
+#   container_name: dev_mysql
+#   environment:
+#     MYSQL_ROOT_PASSWORD: "root"
+#   volumes_from:
+#     - mysql_data
+#   ports:
+#     - "3306:3306"
+#   networks:
+#     dev:
+#       aliases:
+#         - mysql

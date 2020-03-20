@@ -1,0 +1,37 @@
+version: "3.5"
+
+volumes:
+  anphabe_storage:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=10.90.239.72       # IP of nfs server.  This is also where you put any options '-o' in standard option format
+      device: ":/opt/compilers/"  # location on nfs server of file/dir you want to mount
+
+services:
+  php:
+    #build: http://git.anphabe.net/devops/docker-phpfpm.git
+    image: 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/phpfpm:v7.2.6.1
+    volumes:
+    - ${PROJECT_FOLDER}:/app
+
+  nginx:
+    #build: http://git.anphabe.net/devops/docker-nginx.git
+    image: 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/nginx:v1.1.1
+    depends_on:
+    - php
+    volumes:
+    - ./nginx-vhost-anphabe.conf:/etc/nginx/conf.d/anphabe.mio.conf
+    - ${PROJECT_FOLDER}:/app
+    environment:
+      VIRTUAL_HOST: "*.anphabe.mio"
+      CERT_NAME: "*.anphabe.mio"
+    networks:
+      proxy: {}
+      default: {}
+
+  shortflake:
+    #build: http://git.anphabe.net/mio/shortflake.git
+    image: 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/shortflake:v1.1.1
+    depends_on:
+      - php

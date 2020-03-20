@@ -1,0 +1,12 @@
+version: "3.5"
+
+
+services:
+    toran:
+        build: .
+        #image: 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/nginx:v1.1.1
+        volumes:
+            - .:/app
+        environment:
+            VIRTUAL_HOST: "*.anphabe.mio"
+            CERT_NAME: "*.anphabe.mio"

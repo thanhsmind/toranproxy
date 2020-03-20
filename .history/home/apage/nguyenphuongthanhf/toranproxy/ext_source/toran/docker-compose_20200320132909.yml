@@ -1,0 +1,65 @@
+# For new install:
+#  sudo systemctl stop systemd-resolved
+#  sudo systemctl disable systemd-resolved
+#
+# docker network create --driver=bridge --subnet=172.21.0.0/16 --gateway=172.21.0.1 https-proxy
+# docker run -d --restart=always --name=https-proxy --network=https-proxy -v /var/run/docker.sock:/tmp/docker.sock:ro -p 80:80 -p 443:443 -e VIRTUAL_PROTO=https 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/https_proxy:lastest
+# docker run -d --restart=always --name=dnsmasq --network=https-proxy --cap-add=NET_ADMIN -p 127.0.0.53:53:53/tcp -p 127.0.0.53:53:53/udp -p 127.0.0.1:53:53/tcp -p 127.0.0.1:53:53/udp -p 192.168.68.171:53:53/tcp -p 192.168.68.171:53:53/udp andyshinn/dnsmasq:2.78 --address=/mio/192.168.68.178 --server=192.168.68.207 --server=192.168.68.206
+
+
+# Notes: create docker volumes for elasticsearch
+# docker volume create --name elasticsearch_data
+
+version: "3.5"
+
+networks:
+  default:
+    driver: bridge
+  proxy:
+    external: true
+    name: https-proxy
+
+
+services:
+
+    php:
+        #build: http://git.anphabe.net/devops/docker-phpfpm.git
+        image: 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/phpfpm:v7.2.6.1
+        volumes:
+            - ${PROJECT_FOLDER}:/app
+    toran:
+        build: .
+        #image: 990863991647.dkr.ecr.us-west-2.amazonaws.com/devops/nginx:v1.1.1
+        volumes:
+            - ${PROJECT_FOLDER}:/app
+        environment:
+            VIRTUAL_HOST: "*.anphabe.mio"
+            CERT_NAME: "*.anphabe.mio"
+        networks:
+            proxy: {}
+            default: {}
+
+#    mysql:
+#        image: percona
+#        container_name: dev_mysql
+#        environment:
+#          MYSQL_ROOT_PASSWORD: "root"
+#        volumes:
+#          - /data/mysql_data:/data
+#        ports:
+#          - "3306:3306"
+
+
+# mysql:
+#   image: percona
+#   container_name: dev_mysql
+#   environment:
+#     MYSQL_ROOT_PASSWORD: "root"
+#   volumes_from:
+#     - mysql_data
+#   ports:
+#     - "3306:3306"
+#   networks:
+#     dev:
+#       aliases:
+#         - mysql
